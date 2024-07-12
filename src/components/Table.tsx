@@ -1,7 +1,7 @@
 import React from 'react';
 import { useMediaQuery } from 'react-responsive';
 
-// تابع برای کوتاه کردن آدرس
+// making the wallet address shorter
 const shortenAddress = (address: string, maxLength: number = 4): string => {
     if (address.length <= maxLength * 2 + 3) return address;
     return `${address.slice(0, maxLength)}...${address.slice(-maxLength)}`;
