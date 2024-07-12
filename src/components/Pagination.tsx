@@ -1,4 +1,3 @@
-import { is } from '@babel/types';
 import React from 'react';
 import { useMediaQuery } from 'react-responsive';
 
