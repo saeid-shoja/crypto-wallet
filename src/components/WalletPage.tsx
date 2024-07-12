@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
-import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
+import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, PointElement, LineElement, Title, Tooltip, Legend, ChartOptions } from 'chart.js';
 import { Chart } from 'react-chartjs-2';
 import 'chart.js/auto';
 import Spinner from './Spinner';
+import ChartDataLabels from 'chartjs-plugin-datalabels';
+
 
 interface WalletSummary {
     month: string;
@@ -13,14 +15,8 @@ interface WalletSummary {
     totalTransactions: number;
 }
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, PointElement, LineElement, Title, Tooltip, Legend);
+ChartJS.register(CategoryScale, LinearScale, BarElement, PointElement, LineElement, Title, Tooltip, Legend, ChartDataLabels);
 
-const formatNumber = (num: number) => {
-    if (num >= 1e9) return (num / 1e9).toFixed(1) + 'B';
-    if (num >= 1e6) return (num / 1e6).toFixed(1) + 'M';
-    if (num >= 1e3) return (num / 1e3).toFixed(1) + 'K';
-    return num.toString();
-};
 
 const WalletPage: React.FC = () => {
     const { walletAddress } = useParams<{ walletAddress: string }>();
@@ -67,28 +63,63 @@ const WalletPage: React.FC = () => {
         fetchData();
     }, [walletAddress]);
 
-    const options = {
+    const options: ChartOptions<'bar' | 'line'> = {
+        responsive: true,
+        plugins: {
+            datalabels: {
+                display: true,
+                color: 'black',
+                anchor: 'center',
+                align: 'top',
+                formatter: (value: number | string) => {
+                    if (typeof value === 'number') {
+                        if (value >= 1e9) return (value / 1e9).toFixed(1) + 'B';
+                        if (value >= 1e6) return (value / 1e6).toFixed(1) + 'M';
+                        if (value >= 1e3) return (value / 1e3).toFixed(1) + 'K';
+                        return value.toString();
+                    }
+                },
+            },
+            tooltip: {
+                callbacks: {
+                    label: (context: any) => {
+                        const label = context.dataset.label || '';
+                        const value = context.raw;
+                        return `${label}: ${value.toFixed(2)}`;
+                    },
+                },
+            },
+        },
         scales: {
             'y-left': {
                 type: 'linear' as const,
                 position: 'left' as const,
                 ticks: {
-                    callback: function (value: number) {
-                        return formatNumber(value);
+                    callback: (value: string | number) => {
+                        if (typeof value === 'number') {
+                            if (value >= 1e9) return (value / 1e9).toFixed(1) + 'B';
+                            if (value >= 1e6) return (value / 1e6).toFixed(1) + 'M';
+                            if (value >= 1e3) return (value / 1e3).toFixed(1) + 'K';
+                            return value.toString();
+                        }
+                        return value;
                     }
                 }
             },
             'y-right': {
                 type: 'linear' as const,
                 position: 'right' as const,
+                suggestedMin: 5,
                 grid: {
                     drawOnChartArea: false, // فقط یکی از دو محور y باید دارای خطوط شبکه باشد
                 },
                 ticks: {
-                    callback: function (value: number) {
-                        return formatNumber(value);
-                    }
-                }
+                    stepSize: 50, // Minimum value for the axis
+                    precision: 0, // Remove decimal points
+                    callback: function (value: number | any) {
+                        return value.toString();
+                    },
+                },
             },
         },
     };
@@ -98,7 +129,7 @@ const WalletPage: React.FC = () => {
         datasets: [
             {
                 type: 'bar' as const,
-                label: 'Buy Volume',
+                label: 'Buy Amount',
                 data: data.map(item => item.buyVolume),
                 backgroundColor: 'rgba(81, 236, 76, 0.941)',
                 borderColor: '#58f255',
@@ -108,7 +139,7 @@ const WalletPage: React.FC = () => {
             },
             {
                 type: 'bar' as const,
-                label: 'Sell Volume',
+                label: 'Sell Amount',
                 data: data.map(item => item.sellVolume),
                 backgroundColor: 'rgb(241, 75, 75)',
                 borderColor: '#fc5378',
@@ -120,10 +151,12 @@ const WalletPage: React.FC = () => {
                 type: 'line' as const,
                 label: 'Total Transactions',
                 data: data.map(item => item.totalTransactions),
-                borderColor: 'rgba(54, 162, 235, 1)',
-                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                borderColor: '#123953',
+                backgroundColor: 'rgba(53, 114, 155, 0.2)',
                 yAxisID: 'y-right',
                 order: 1,
+                fill: false,
+                borderWidth: 1,
             }
         ],
     };
@@ -136,7 +169,7 @@ const WalletPage: React.FC = () => {
             {loading ? (
                 <Spinner />
             ) : (
-                <div className="w-full md:w-3/4 lg:w-1/2 mobile-chart-height min-h-48">
+                <div className="flex justify-center items-center min-w-full sm:w-full">
                     <Chart type='bar' data={chartData} options={options} />
                 </div>
             )}

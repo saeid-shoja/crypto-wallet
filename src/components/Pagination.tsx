@@ -1,4 +1,6 @@
 import React from 'react';
+import { useMediaQuery } from 'react-responsive';
+
 
 interface PaginationProps {
     itemsPerPage: number;
@@ -8,6 +10,8 @@ interface PaginationProps {
 }
 
 const Pagination: React.FC<PaginationProps> = ({ itemsPerPage, totalItems, paginate, currentPage }) => {
+    const isMobile = useMediaQuery({ query: '(max-width: 767px)' });
+
     const pageNumbers = [];
     const totalPages = Math.ceil(totalItems / itemsPerPage);
 
@@ -16,7 +20,7 @@ const Pagination: React.FC<PaginationProps> = ({ itemsPerPage, totalItems, pagin
     }
 
     return (
-        <nav className="my-4">
+        <nav className="my-4 max-w-full">
             <ul className="flex justify-center items-center">
                 <li>
                     <button
@@ -27,7 +31,9 @@ const Pagination: React.FC<PaginationProps> = ({ itemsPerPage, totalItems, pagin
                         &lt;
                     </button>
                 </li>
-                {pageNumbers.map(number => (
+                {isMobile ? <button className='px-3 py-1 border rounded bg-blue-500 text-white'>
+                    {currentPage}
+                </button> : pageNumbers.map(number => (
                     <li key={number} className={`mx-1 ${currentPage === number ? 'text-blue-500' : ''}`}>
                         <button
                             onClick={() => paginate(number)}
