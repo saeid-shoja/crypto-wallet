@@ -37,7 +37,7 @@ const WalletPage: React.FC = () => {
                 const totalSellAmounts = response.data.totalSellAmounts?.month || {};
                 const totalBuySellTimes = response.data.totalBuySellTimes?.month || {};
 
-                // تبدیل داده‌ها به قالب مناسب برای نمودار
+                // make usable data structure 
                 const chartData = Object.keys(totalBuyAmounts).map(month => ({
                     month,
                     buyVolume: totalBuyAmounts[month],
@@ -45,7 +45,7 @@ const WalletPage: React.FC = () => {
                     totalTransactions: totalBuySellTimes[month] || 0,
                 }));
 
-                // مرتب‌سازی داده‌ها بر اساس تاریخ
+                // sorting the date
                 chartData.sort((a, b) => {
                     const dateA = new Date(a.month);
                     const dateB = new Date(b.month);
@@ -63,6 +63,16 @@ const WalletPage: React.FC = () => {
         fetchData();
     }, [walletAddress]);
 
+    const formatYAxisValue = (value: string | number): string => {
+        if (typeof value === 'number') {
+            if (value >= 1e9) return (value / 1e9).toFixed(1) + 'B';
+            if (value >= 1e6) return (value / 1e6).toFixed(1) + 'M';
+            if (value >= 1e3) return (value / 1e3).toFixed(1) + 'K';
+            return value.toString();
+        }
+        return value.toString();
+    };
+
     const options: ChartOptions<'bar' | 'line'> = {
         responsive: true,
         plugins: {
@@ -71,14 +81,7 @@ const WalletPage: React.FC = () => {
                 color: 'black',
                 anchor: 'center',
                 align: 'top',
-                formatter: (value: number | string) => {
-                    if (typeof value === 'number') {
-                        if (value >= 1e9) return (value / 1e9).toFixed(1) + 'B';
-                        if (value >= 1e6) return (value / 1e6).toFixed(1) + 'M';
-                        if (value >= 1e3) return (value / 1e3).toFixed(1) + 'K';
-                        return value.toString();
-                    }
-                },
+                formatter: formatYAxisValue,
             },
             tooltip: {
                 callbacks: {
@@ -95,15 +98,7 @@ const WalletPage: React.FC = () => {
                 type: 'linear' as const,
                 position: 'left' as const,
                 ticks: {
-                    callback: (value: string | number) => {
-                        if (typeof value === 'number') {
-                            if (value >= 1e9) return (value / 1e9).toFixed(1) + 'B';
-                            if (value >= 1e6) return (value / 1e6).toFixed(1) + 'M';
-                            if (value >= 1e3) return (value / 1e3).toFixed(1) + 'K';
-                            return value.toString();
-                        }
-                        return value;
-                    }
+                    callback: formatYAxisValue
                 }
             },
             'y-right': {
@@ -111,7 +106,7 @@ const WalletPage: React.FC = () => {
                 position: 'right' as const,
                 suggestedMin: 5,
                 grid: {
-                    drawOnChartArea: false, // فقط یکی از دو محور y باید دارای خطوط شبکه باشد
+                    drawOnChartArea: false,
                 },
                 ticks: {
                     stepSize: 50, // Minimum value for the axis
